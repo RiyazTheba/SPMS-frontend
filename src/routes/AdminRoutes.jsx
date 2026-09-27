@@ -1,4 +1,4 @@
-import {  Routes, Route } from "react-router-dom";
+import {  Routes, Route, Navigate  } from "react-router-dom";
 
 import AdminLayout from "../layouts/AdminLayout";
 
@@ -16,6 +16,11 @@ import Profile from "../components/Profile";
 import UserRoles from "../pages/admin/UserRoles";
 
 function AdminRoutes() {
+    const role = localStorage.getItem("role");
+
+            if (role !== "admin") {
+                return <Navigate to="/" replace />;
+            }
     return (
   
             <Routes>

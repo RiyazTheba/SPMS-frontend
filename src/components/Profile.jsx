@@ -81,7 +81,7 @@ function Profile() {
         <div className="container-fluid px-0 py-3">
             
            
-            <div className="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center">
+            {/* <div className="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center">
                 <div>
                     <h4 className="mb-1 fw-semibold text-dark fs-5">User Profile Settings</h4>
                     <p className="text-muted mb-0" style={{ fontSize: "0.875rem" }}>
@@ -96,7 +96,7 @@ function Profile() {
                         <Edit3 size={16} /> Edit Profile
                     </button>
                 )}
-            </div>
+            </div> */}
 
             {/* Success / Error Message Alert */}
             {message && (
@@ -115,7 +115,7 @@ function Profile() {
                                 <User size={45} className="text-secondary opacity-75" />
                             </div>
                         </div>
-                        <h5 className="fw-semibold text-dark mb-1">{user.FullName || "User Name"}</h5>
+                        <h5 className="fw-semibold text-dark mb-1">Prof.{user.FullName || "User Name"}</h5>
                         <p className="text-muted small mb-2">{user.Email || "user@example.com"}</p>
                         
                         <div className="badge bg-primary-subtle text-primary border border-primary-subtle rounded-0 py-1 px-3 fw-normal mx-auto mb-3 text-uppercase" style={{ fontSize: "0.75rem" }}>
@@ -167,22 +167,7 @@ function Profile() {
                                 />
                             </div>
 
-                            {/* Mobile Number */}
-                            <div className="mb-3">
-                                <label className="form-label small fw-medium text-dark d-flex align-items-center gap-1">
-                                    <Phone size={14} /> Mobile Number
-                                </label>
-                                <input 
-                                    type="text" 
-                                    className="form-control rounded-0" 
-                                    name="MobileNumber" 
-                                    value={user.MobileNumber} 
-                                    onChange={handleChange} 
-                                    disabled={!isEditing}
-                                    required
-                                />
-                            </div>
-
+                           
                            
                             {user.Role.toLowerCase() === "student" && (
                                 <div className="mb-3">

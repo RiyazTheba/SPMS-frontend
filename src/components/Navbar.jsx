@@ -1,123 +1,148 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown, UserCircle, Settings, LogOut } from "lucide-react";
-
+import {
+  ChevronDown,
+  UserCircle,
+  LogOut,
+} from "lucide-react";
 
 function Navbar() {
-    const [profileOpen, setProfileOpen] = useState(false);
-    const dropdownRef = useRef();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const dropdownRef = useRef();
 
-    const role = localStorage.getItem("role") || "Admin";
+  // Get logged-in user information
+  const role = localStorage.getItem("role") || "Admin";
+  const fullName = localStorage.getItem("fullName");
+  const email = localStorage.getItem("email");
 
-    const displayName =
-        role.charAt(0).toUpperCase() + role.slice(1);
+  // Show user's actual name
+  const displayName =
+    fullName || role.charAt(0).toUpperCase() + role.slice(1);
 
-    // Dynamic Profile Route Path based on Role (e.g., /admin/profile, /student/profile, /faculty/profile)
-    const currentRole = (localStorage.getItem("role") || "admin").toLowerCase();
-    const profilePath = `/${currentRole}/profile`;
+  // Profile route based on role
+  const currentRole = role.toLowerCase();
+  const profilePath = `/${currentRole}/profile`;
 
-    // Logout
-    const logout = () => {
-        localStorage.clear();
-        window.location.href = "/";
+  // Logout
+  const logout = () => {
+    localStorage.clear();
+    window.location.href = "/";
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const closeDropdown = (e) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target)
+      ) {
+        setProfileOpen(false);
+      }
     };
 
-    // Outside click close dropdown
-    useEffect(() => {
-        const closeDropdown = (e) => {
-            if (
-                dropdownRef.current &&
-                !dropdownRef.current.contains(e.target)
-            ) {
-                setProfileOpen(false);
-            }
-        };
+    document.addEventListener("click", closeDropdown);
 
-        document.addEventListener(
-            "click",
-            closeDropdown
-        );
+    return () => {
+      document.removeEventListener("click", closeDropdown);
+    };
+  }, []);
 
-        return () => {
-            document.removeEventListener(
-                "click",
-                closeDropdown
-            );
-        };
-    }, []);
+  return (
+    <nav className="navbar spms-navbar px-4">
 
+      {/* Right Side */}
+      <div
+        ref={dropdownRef}
+        className="ms-auto dropdown position-relative"
+      >
 
-    return (
-        <nav className="navbar spms-navbar px-4">
+        {/* Profile Button */}
+        <button
+          type="button"
+          className="btn spms-profile-btn d-flex align-items-center gap-2"
+          onClick={(e) => {
+            e.stopPropagation();
+            setProfileOpen(!profileOpen);
+          }}
+        >
 
-            {/* Right Side */}
-            <div 
-                ref={dropdownRef}
-                className="ms-auto dropdown position-relative"
-            >
+          {/* Avatar */}
+          <div className="spms-avatar">
+            {displayName.charAt(0).toUpperCase()}
+          </div>
 
-                <button
-                    type="button"
-                    className="btn spms-profile-btn d-flex align-items-center gap-2"
-                    onClick={(e)=>{
-                        e.stopPropagation();
-                        setProfileOpen(!profileOpen);
-                    }}
-                >
+          {/* User Name */}
+          <span>
+            {displayName}
+          </span>
 
-                    <div className="spms-avatar">
-                        {displayName.charAt(0)}
-                    </div>
+          {/* Arrow */}
+          <ChevronDown
+            size={16}
+            style={{
+              transform: profileOpen
+                ? "rotate(180deg)"
+                : "rotate(0deg)",
+              transition: "0.3s",
+            }}
+          />
 
-                    <span>
-                        {displayName}
-                    </span>
+        </button>
 
-                    <ChevronDown 
-                        size={16}
-                        style={{
-                            transform: profileOpen 
-                            ? "rotate(180deg)" 
-                            : "rotate(0deg)",
-                            transition:"0.3s"
-                        }}
-                    />
+        {/* Dropdown */}
+        {profileOpen && (
+          <div className="dropdown-menu show spms-dropdown">
 
-                </button>
+            {/* User Information */}
+            <div className="px-3 py-2">
+              <div className="fw-semibold">
+                {displayName}
+              </div>
 
-                {
-                    profileOpen && (
+              {email && (
+                <small className="text-muted">
+                  {email}
+                </small>
+              )}
 
-                        <div className="dropdown-menu show spms-dropdown">
-
-                            <Link
-                                to={profilePath}  
-                                className="dropdown-item"
-                                onClick={()=>setProfileOpen(false)}
-                            >
-                                <UserCircle size={18} />
-                                Profile
-                            </Link>
-
-                            <hr className="dropdown-divider" />
-
-                            <button
-                                className="dropdown-item text-danger"
-                                onClick={logout}
-                            >
-                                <LogOut size={18} />
-                                Logout
-                            </button>
-
-                        </div>
-
-                    )
-                }
-
+              <div>
+                <small className="text-muted">
+                  {role}
+                </small>
+              </div>
             </div>
 
-        </nav>
-    );
+            <hr className="dropdown-divider" />
+
+            {/* Profile */}
+            <Link
+              to={profilePath}
+              className="dropdown-item d-flex align-items-center gap-2"
+              onClick={() => setProfileOpen(false)}
+            >
+              <UserCircle size={18} />
+              Profile
+            </Link>
+
+            <hr className="dropdown-divider" />
+
+            {/* Logout */}
+            <button
+              className="dropdown-item text-danger d-flex align-items-center gap-2"
+              onClick={logout}
+            >
+              <LogOut size={18} />
+              Logout
+            </button>
+
+          </div>
+        )}
+
+      </div>
+
+    </nav>
+  );
 }
 
 export default Navbar;

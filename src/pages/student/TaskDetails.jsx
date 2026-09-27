@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import {
     CheckCircle,
     Clock,
@@ -8,379 +10,1436 @@ import {
     ArrowRight,
     TrendingUp,
     ArrowLeft,
-    Upload,
-    MessageSquare,
     Award,
-    FileText,
-    Edit3
+    MessageSquare,
+    FolderKanban
 } from "lucide-react";
 
-// ==========================================
-// 1. TASK DETAILS COMPONENT (Detailed View)
-// ==========================================
-function TaskDetails({ task, onBack }) {
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [studentRemarks, setStudentRemarks] = useState(task.StudentRemarks || "");
 
-    const getStatusDetails = (statusId) => {
-        switch (statusId) {
-            case 3:
-                return {
-                    badge: (
-                        <span className="badge bg-success-subtle text-success px-3 py-2 rounded-0 fw-normal d-inline-flex align-items-center gap-1.5 border border-success-subtle" style={{ fontSize: "0.8rem" }}>
-                            <CheckCircle size={14} /> Completed
-                        </span>
-                    )
-                };
-            case 2:
-                return {
-                    badge: (
-                        <span className="badge bg-primary-subtle text-primary px-3 py-2 rounded-0 fw-normal d-inline-flex align-items-center gap-1.5 border border-primary-subtle" style={{ fontSize: "0.8rem" }}>
-                            <Clock size={14} /> In Progress
-                        </span>
-                    )
-                };
-            case 1:
-            default:
-                return {
-                    badge: (
-                        <span className="badge bg-warning-subtle text-warning-emphasis px-3 py-2 rounded-0 fw-normal d-inline-flex align-items-center gap-1.5 border border-warning-subtle" style={{ fontSize: "0.8rem" }}>
-                            <AlertCircle size={14} /> Pending
-                        </span>
-                    )
-                };
+// ======================================================
+// TASK DETAILS
+// ======================================================
+
+function TaskDetails({ task, projectTitle, onBack }) {
+
+    const getStatusBadge = (status) => {
+
+        const value = Number(status);
+
+        if (value === 3) {
+            return (
+                <span className="badge bg-success-subtle text-success px-3 py-2 rounded-0">
+                    <CheckCircle size={14} className="me-1" />
+                    Completed
+                </span>
+            );
         }
+
+        if (value === 2) {
+            return (
+                <span className="badge bg-primary-subtle text-primary px-3 py-2 rounded-0">
+                    <Clock size={14} className="me-1" />
+                    In Progress
+                </span>
+            );
+        }
+
+        return (
+            <span className="badge bg-warning-subtle text-warning-emphasis px-3 py-2 rounded-0">
+                <AlertCircle size={14} className="me-1" />
+                Pending
+            </span>
+        );
     };
 
-    const getPriorityDetails = (priorityId) => {
-        switch (priorityId) {
-            case 3: return { label: "High", color: "text-danger" };
-            case 2: return { label: "Medium", color: "text-warning" };
-            case 1: 
-            default: return { label: "Low", color: "text-success" };
+
+    const getPriority = (priority) => {
+
+        const value = Number(priority);
+
+        if (value === 3) {
+            return (
+                <span className="text-danger fw-medium">
+                    High
+                </span>
+            );
         }
+
+        if (value === 2) {
+            return (
+                <span className="text-warning fw-medium">
+                    Medium
+                </span>
+            );
+        }
+
+        return (
+            <span className="text-success fw-medium">
+                Low
+            </span>
+        );
     };
 
-    const handleUploadSubmit = (e) => {
-        e.preventDefault();
-        if (!selectedFile) {
-            alert("Please select a file to upload!");
-            return;
+
+    const formatDate = (date) => {
+
+        if (!date) {
+            return "Not Specified";
         }
-        alert(`Task "${task.TaskTitle}" submitted successfully with file: ${selectedFile.name}!`);
+
+        return new Date(date).toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric"
+        });
     };
 
-    const priorityInfo = getPriorityDetails(task.PriorityID);
-    const statusInfo = getStatusDetails(task.TaskStatus);
 
     return (
         <div className="container-fluid px-0 py-3">
-            
-            {/* Header with Back Button */}
+
+            {/* HEADER */}
+
             <div className="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+
                 <div className="d-flex align-items-center gap-3">
-                    <button className="btn btn-outline-secondary rounded-0 btn-sm d-flex align-items-center gap-1" onClick={onBack}>
-                        <ArrowLeft size={16} /> Back to Tasks
+
+                    <button
+                        className="btn btn-outline-secondary rounded-0 btn-sm d-flex align-items-center gap-1"
+                        onClick={onBack}
+                    >
+                        <ArrowLeft size={16} />
+                        Back to Tasks
                     </button>
+
                     <div>
-                        <h4 className="mb-1 fw-semibold text-dark fs-5 tracking-tight">Task Details & Submission</h4>
-                        <p className="text-muted mb-0" style={{ fontSize: "0.875rem" }}>
-                            Task ID: #{task.TaskId} | Allocation ID: #{task.AllocationID}
+
+                        <h4 className="mb-1 fw-semibold text-dark fs-5">
+                            Task Details
+                        </h4>
+
+                        <p
+                            className="text-muted mb-0"
+                            style={{ fontSize: "0.875rem" }}
+                        >
+                            Task #{task.taskId}
                         </p>
+
                     </div>
+
                 </div>
+
                 <div>
-                    {statusInfo.badge}
+                    {getStatusBadge(task.status)}
                 </div>
+
             </div>
 
-            {/* Main Task Card */}
-            <div className="card border-0 shadow-sm rounded-0 bg-white mb-4">
+
+            {/* PROJECT */}
+
+            <div className="card border-0 shadow-sm rounded-0 mb-4">
+
+                <div className="card-body p-3">
+
+                    <div className="d-flex align-items-center gap-2">
+
+                        <FolderKanban
+                            size={18}
+                            className="text-primary"
+                        />
+
+                        <span className="text-muted">
+                            Project:
+                        </span>
+
+                        <span className="fw-semibold text-dark">
+                            {projectTitle}
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            {/* TASK INFORMATION */}
+
+            <div className="card border-0 shadow-sm rounded-0 bg-white">
+
                 <div className="card-body p-4 p-lg-5">
-                    
+
+                    {/* TITLE */}
+
                     <div className="mb-4">
-                        <span className="text-uppercase text-primary fw-medium d-block mb-1" style={{ fontSize: "0.7rem", letterSpacing: "0.08em" }}>
+
+                        <span
+                            className="text-uppercase text-primary fw-medium d-block mb-1"
+                            style={{
+                                fontSize: "0.7rem",
+                                letterSpacing: "0.08em"
+                            }}
+                        >
                             Task Title
                         </span>
-                        <h3 className="fw-semibold text-dark mb-3" style={{ fontSize: "1.3rem" }}>
-                            {task.TaskTitle}
+
+                        <h3
+                            className="fw-semibold text-dark mb-3"
+                            style={{ fontSize: "1.3rem" }}
+                        >
+                            {task.taskTitle}
                         </h3>
-                        <p className="text-secondary mb-0 fw-light" style={{ lineHeight: "1.7", fontSize: "0.95rem" }}>
-                            {task.TaskDescription}
+
+                        <p
+                            className="text-secondary mb-0"
+                            style={{
+                                lineHeight: "1.7",
+                                fontSize: "0.95rem"
+                            }}
+                        >
+                            {task.taskDescription ||
+                                "No description available."}
                         </p>
+
                     </div>
+
 
                     <hr className="text-muted opacity-10 my-4" />
 
+
+                    {/* INFORMATION GRID */}
+
                     <div className="row g-4 mb-4">
-                        <div className="col-sm-6 col-lg-3">
-                            <div className="p-3 rounded-0 bg-light bg-opacity-50 border border-light h-100">
-                                <div className="text-muted small mb-2 d-flex align-items-center gap-2 fw-medium" style={{ fontSize: "0.8rem" }}>
-                                    <Flag size={16} className="text-warning opacity-75" /> Priority
-                                </div>
-                                <div className={`fw-medium ${priorityInfo.color}`} style={{ fontSize: "0.9rem" }}>
-                                    {priorityInfo.label}
-                                </div>
-                            </div>
-                        </div>
+
+                        {/* PRIORITY */}
 
                         <div className="col-sm-6 col-lg-3">
-                            <div className="p-3 rounded-0 bg-light bg-opacity-50 border border-light h-100">
-                                <div className="text-muted small mb-2 d-flex align-items-center gap-2 fw-medium" style={{ fontSize: "0.8rem" }}>
-                                    <Award size={16} className="text-primary opacity-75" /> Score (Earned / Max)
+
+                            <div className="p-3 bg-light bg-opacity-50 border border-light h-100">
+
+                                <div className="text-muted small mb-2 d-flex align-items-center gap-2 fw-medium">
+
+                                    <Flag
+                                        size={16}
+                                        className="text-warning"
+                                    />
+
+                                    Priority
+
                                 </div>
-                                <div className="fw-medium text-dark" style={{ fontSize: "0.9rem" }}>
-                                    {task.EarnedScore !== null ? task.EarnedScore : "--"} / {task.AssignedScore} Marks
-                                </div>
+
+                                {getPriority(task.priority)}
+
                             </div>
+
                         </div>
 
-                        <div className="col-sm-6 col-lg-3">
-                            <div className="p-3 rounded-0 bg-light bg-opacity-50 border border-light h-100">
-                                <div className="text-muted small mb-2 d-flex align-items-center gap-2 fw-medium" style={{ fontSize: "0.8rem" }}>
-                                    <Calendar size={16} className="text-success opacity-75" /> Start Date
-                                </div>
-                                <div className="fw-medium text-dark" style={{ fontSize: "0.9rem" }}>
-                                    {task.StartDate || "Not Specified"}
-                                </div>
-                            </div>
-                        </div>
+
+                        {/* SCORE */}
 
                         <div className="col-sm-6 col-lg-3">
-                            <div className="p-3 rounded-0 bg-light bg-opacity-50 border border-light h-100">
-                                <div className="text-muted small mb-2 d-flex align-items-center gap-2 fw-medium" style={{ fontSize: "0.8rem" }}>
-                                    <Calendar size={16} className="text-danger opacity-75" /> Due Date
+
+                            <div className="p-3 bg-light bg-opacity-50 border border-light h-100">
+
+                                <div className="text-muted small mb-2 d-flex align-items-center gap-2 fw-medium">
+
+                                    <Award
+                                        size={16}
+                                        className="text-primary"
+                                    />
+
+                                    Score
+
                                 </div>
-                                <div className="fw-medium text-dark" style={{ fontSize: "0.9rem" }}>
-                                    {task.DueDate || "No Deadline"}
+
+                                <div className="fw-medium text-dark">
+
+                                    {task.earnedScore ?? "--"}
+                                    {" / "}
+                                    {task.assignedScore ?? 0}
+                                    {" Marks"}
+
                                 </div>
+
                             </div>
+
                         </div>
+
+
+                        {/* START DATE */}
+
+                        <div className="col-sm-6 col-lg-3">
+
+                            <div className="p-3 bg-light bg-opacity-50 border border-light h-100">
+
+                                <div className="text-muted small mb-2 d-flex align-items-center gap-2 fw-medium">
+
+                                    <Calendar
+                                        size={16}
+                                        className="text-success"
+                                    />
+
+                                    Start Date
+
+                                </div>
+
+                                <div className="fw-medium text-dark">
+
+                                    {formatDate(task.startDate)}
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        {/* DUE DATE */}
+
+                        <div className="col-sm-6 col-lg-3">
+
+                            <div className="p-3 bg-light bg-opacity-50 border border-light h-100">
+
+                                <div className="text-muted small mb-2 d-flex align-items-center gap-2 fw-medium">
+
+                                    <Calendar
+                                        size={16}
+                                        className="text-danger"
+                                    />
+
+                                    Due Date
+
+                                </div>
+
+                                <div className="fw-medium text-dark">
+
+                                    {formatDate(task.dueDate)}
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
                     </div>
+
+
+                    {/* PROGRESS */}
 
                     <div className="mb-4">
+
                         <div className="d-flex justify-content-between align-items-center mb-2">
-                            <span className="fw-medium text-dark d-flex align-items-center gap-2" style={{ fontSize: "0.875rem" }}>
-                                <TrendingUp size={16} className="text-primary opacity-75" /> Task Progress Percentage
+
+                            <span
+                                className="fw-medium text-dark d-flex align-items-center gap-2"
+                                style={{ fontSize: "0.875rem" }}
+                            >
+
+                                <TrendingUp
+                                    size={16}
+                                    className="text-primary"
+                                />
+
+                                Task Progress
+
                             </span>
-                            <span className="fw-semibold text-primary" style={{ fontSize: "0.9rem" }}>
-                                {task.ProgressPercentage}%
+
+                            <span className="fw-semibold text-primary">
+
+                                {task.progress ?? 0}%
+
                             </span>
+
                         </div>
-                        <div className="progress bg-light rounded-0" style={{ height: "6px" }}>
-                            <div className="progress-bar bg-primary rounded-0" role="progressbar" style={{ width: `${task.ProgressPercentage}%` }}></div>
+
+
+                        <div
+                            className="progress bg-light rounded-0"
+                            style={{ height: "6px" }}
+                        >
+
+                            <div
+                                className="progress-bar bg-primary rounded-0"
+                                style={{
+                                    width: `${task.progress ?? 0}%`
+                                }}
+                            />
+
                         </div>
+
                     </div>
 
-                    {task.FacultyRemarks && (
-                        <div className="p-3 bg-light border-start border-4 border-primary rounded-0 mb-4">
-                            <div className="d-flex align-items-center gap-2 text-dark fw-medium mb-1" style={{ fontSize: "0.85rem" }}>
-                                <MessageSquare size={16} className="text-primary" /> Faculty Remarks:
-                            </div>
-                            <p className="text-secondary mb-0 small" style={{ fontSize: "0.9rem" }}>
-                                {task.FacultyRemarks}
-                            </p>
-                        </div>
-                    )}
-                </div>
-            </div>
 
-            {/* Submission Section */}
-            <div className="card border-0 shadow-sm rounded-0 bg-white">
-                <div className="card-body p-4 p-lg-5">
-                    <h5 className="fw-semibold text-dark mb-3" style={{ fontSize: "1.1rem" }}>Submit Your Work</h5>
-                    <form onSubmit={handleUploadSubmit}>
-                        <div className="mb-3">
-                            <label className="form-label small fw-medium text-dark d-flex align-items-center gap-1">
-                                <Edit3 size={14} /> Student Remarks
-                            </label>
-                            <textarea 
-                                className="form-control rounded-0" 
-                                rows="3"
-                                value={studentRemarks}
-                                onChange={(e) => setStudentRemarks(e.target.value)}
-                            ></textarea>
+                    {/* FACULTY REMARKS */}
+
+                    {task.facultyRemarks && (
+
+                        <div className="p-3 bg-light border-start border-4 border-primary">
+
+                            <div className="d-flex align-items-center gap-2 text-dark fw-medium mb-2">
+
+                                <MessageSquare
+                                    size={16}
+                                    className="text-primary"
+                                />
+
+                                Faculty Remarks
+
+                            </div>
+
+                            <p className="text-secondary mb-0">
+
+                                {task.facultyRemarks}
+
+                            </p>
+
                         </div>
-                        <div className="mb-4">
-                            <label className="form-label small fw-medium text-dark d-flex align-items-center gap-1">
-                                <FileText size={14} /> Choose File (ZIP, PDF)
-                            </label>
-                            <input className="form-control rounded-0" type="file" onChange={(e) => setSelectedFile(e.target.files[0])} />
-                        </div>
-                        <button type="submit" className="btn btn-primary rounded-0 px-4 py-2 d-inline-flex align-items-center gap-2">
-                            <Upload size={16} /> Upload & Submit Task
-                        </button>
-                    </form>
+
+                    )}
+
                 </div>
+
             </div>
 
         </div>
     );
 }
 
-// ==========================================
-// 2. MAIN DASHBOARD / LIST COMPONENT
-// ==========================================
+
+// ======================================================
+// MAIN COMPONENT
+// ======================================================
+
 function TaskListDashboard() {
-    const [selectedTaskId, setSelectedTaskId] = useState(null);
 
-    const [tasks] = useState([
-        {
-            TaskId: 101,
-            AllocationID: 12,
-            TaskTitle: "Implement Campus Map API Integration",
-            TaskDescription: "Integrate Leaflet.js library with backend REST endpoints for building locations.",
-            TaskStatus: 2,
-            PriorityID: 3,
-            AssignedScore: 10.00,
-            EarnedScore: null,
-            ProgressPercentage: 65,
-            StartDate: "2026-03-01",
-            DueDate: "2026-03-15",
-            FacultyRemarks: "Ensure smooth marker loading."
-        },
-        {
-            TaskId: 102,
-            AllocationID: 12,
-            TaskTitle: "Student Authentication & JWT Setup",
-            TaskDescription: "Create secure login and registration endpoints with token verification middleware.",
-            TaskStatus: 1,
-            PriorityID: 2,
-            AssignedScore: 10.00,
-            EarnedScore: null,
-            ProgressPercentage: 0,
-            StartDate: "2026-03-10",
-            DueDate: "2026-03-22",
-            FacultyRemarks: "Use bcrypt for password hashing."
-        },
-        {
-            TaskId: 103,
-            AllocationID: 12,
-            TaskTitle: "Database Indexing & Schema Optimization",
-            TaskDescription: "Optimize MongoDB/SQL queries for faster resource tracking and navigation logs.",
-            TaskStatus: 3,
-            PriorityID: 1,
-            AssignedScore: 10.00,
-            EarnedScore: 9.50,
-            ProgressPercentage: 100,
-            StartDate: "2026-02-15",
-            DueDate: "2026-02-28",
-            FacultyRemarks: "Great job on query performance."
-        }
-    ]);
+    const [projects, setProjects] = useState([]);
 
-    const getStatusDetails = (statusId) => {
-        switch (statusId) {
-            case 3:
-                return <span className="badge bg-success-subtle text-success px-2 py-1 rounded-0 fw-normal d-inline-flex align-items-center gap-1 border border-success-subtle" style={{ fontSize: "0.75rem" }}><CheckCircle size={12} /> Completed</span>;
-            case 2:
-                return <span className="badge bg-primary-subtle text-primary px-2 py-1 rounded-0 fw-normal d-inline-flex align-items-center gap-1 border border-primary-subtle" style={{ fontSize: "0.75rem" }}><Clock size={12} /> In Progress</span>;
-            case 1:
-            default:
-                return <span className="badge bg-warning-subtle text-warning-emphasis px-2 py-1 rounded-0 fw-normal d-inline-flex align-items-center gap-1 border border-warning-subtle" style={{ fontSize: "0.75rem" }}><AlertCircle size={12} /> Pending</span>;
+    const [loading, setLoading] = useState(true);
+
+    const [error, setError] = useState("");
+
+    const [selectedTask, setSelectedTask] = useState(null);
+
+    const [selectedProjectTitle, setSelectedProjectTitle] =
+        useState("");
+
+
+    // ==================================================
+    // API URLS
+    // ==================================================
+
+    const USERS_API =
+        "http://localhost:5278/api/Users";
+
+    const PROJECTS_API =
+        "http://localhost:5278/api/Projects";
+
+    const TASKS_API =
+        "http://localhost:5278/api/Tasks";
+
+
+    // ==================================================
+    // LOAD DATA
+    // ==================================================
+
+    useEffect(() => {
+
+        loadData();
+
+    }, []);
+
+
+    const loadData = async () => {
+
+        try {
+
+            setLoading(true);
+
+            setError("");
+
+
+            // ==========================================
+            // GET LOGGED-IN USER
+            // ==========================================
+
+            const storedUser =
+                localStorage.getItem("user") ||
+                localStorage.getItem("currentUser") ||
+                localStorage.getItem("loggedInUser");
+
+
+            let loginUser = null;
+
+
+            if (storedUser) {
+
+                try {
+
+                    loginUser =
+                        JSON.parse(storedUser);
+
+                }
+                catch (error) {
+
+                    console.log(
+                        "User JSON parse error"
+                    );
+
+                }
+
+            }
+
+
+            const loginEmail =
+                loginUser?.email ||
+                loginUser?.Email ||
+                localStorage.getItem("email") ||
+                localStorage.getItem("userEmail");
+
+
+            const loginName =
+                loginUser?.name ||
+                loginUser?.Name ||
+                loginUser?.fullName ||
+                loginUser?.FullName ||
+                localStorage.getItem("name") ||
+                localStorage.getItem("userName");
+
+
+            console.log(
+                "Logged-in Email:",
+                loginEmail
+            );
+
+            console.log(
+                "Logged-in Name:",
+                loginName
+            );
+
+
+            // ==========================================
+            // USERS API
+            // ==========================================
+
+            const usersResponse =
+                await axios.get(USERS_API);
+
+
+            let users = usersResponse.data;
+
+
+            if (!Array.isArray(users)) {
+
+                users =
+                    users?.data ||
+                    users?.users ||
+                    [];
+
+            }
+
+
+            // ==========================================
+            // FIND LOGGED-IN STUDENT
+            // ==========================================
+
+            const currentUser =
+                users.find((user) => {
+
+                    const email =
+                        user.email ||
+                        user.Email ||
+                        "";
+
+                    const name =
+                        user.fullName ||
+                        user.FullName ||
+                        user.name ||
+                        user.Name ||
+                        "";
+
+
+                    const emailMatch =
+                        loginEmail &&
+                        email.toLowerCase() ===
+                        loginEmail.toLowerCase();
+
+
+                    const nameMatch =
+                        loginName &&
+                        name.toLowerCase() ===
+                        loginName.toLowerCase();
+
+
+                    return emailMatch || nameMatch;
+
+                });
+
+
+            if (!currentUser) {
+
+                setError(
+                    "Logged-in student not found in Users API."
+                );
+
+                return;
+
+            }
+
+
+            const studentId =
+                currentUser.userId ??
+                currentUser.UserId ??
+                currentUser.studentId ??
+                currentUser.StudentId;
+
+
+            console.log(
+                "Current Student ID:",
+                studentId
+            );
+
+
+            // ==========================================
+            // PROJECTS API
+            // ==========================================
+
+            const projectsResponse =
+                await axios.get(PROJECTS_API);
+
+
+            let allProjects =
+                projectsResponse.data;
+
+
+            if (!Array.isArray(allProjects)) {
+
+                allProjects =
+                    allProjects?.data ||
+                    allProjects?.projects ||
+                    [];
+
+            }
+
+
+            console.log(
+                "Projects API Response:",
+                allProjects
+            );
+
+
+            // ==========================================
+            // ONLY CURRENT STUDENT PROJECTS
+            // ==========================================
+
+            const studentProjects =
+                allProjects.filter((project) => {
+
+                    const projectStudentId =
+                        project.studentId ??
+                        project.StudentId;
+
+
+                    return (
+                        Number(projectStudentId) ===
+                        Number(studentId)
+                    );
+
+                });
+
+
+            console.log(
+                "My Projects:",
+                studentProjects
+            );
+
+
+            // ==========================================
+            // TASKS API
+            // ==========================================
+
+            const tasksResponse =
+                await axios.get(TASKS_API);
+
+
+            let allTasks =
+                tasksResponse.data;
+
+
+            if (!Array.isArray(allTasks)) {
+
+                allTasks =
+                    allTasks?.data ||
+                    allTasks?.tasks ||
+                    [];
+
+            }
+
+
+            console.log(
+                "Tasks API Response:",
+                allTasks
+            );
+
+
+            // ==========================================
+            // CONNECT PROJECT → TASK
+            // ==========================================
+
+            const finalProjects =
+                studentProjects.map((project) => {
+
+                    const projectId =
+                        project.projectId ??
+                        project.ProjectId;
+
+
+                    /*
+                        Your Tasks API has allocationId.
+
+                        We check possible projectId fields
+                        in task also.
+
+                        If task directly contains projectId,
+                        it will work immediately.
+
+                        Otherwise allocationId is compared
+                        with projectId.
+                    */
+
+                    const projectTasks =
+                        allTasks.filter((task) => {
+
+                            const taskProjectId =
+                                task.projectId ??
+                                task.ProjectId;
+
+
+                            const taskAllocationId =
+                                task.allocationId ??
+                                task.AllocationId;
+
+
+                            // Direct projectId relation
+                            if (
+                                taskProjectId !== undefined &&
+                                taskProjectId !== null
+                            ) {
+
+                                return (
+                                    Number(taskProjectId) ===
+                                    Number(projectId)
+                                );
+
+                            }
+
+
+                            // allocationId relation
+                            return (
+                                Number(taskAllocationId) ===
+                                Number(projectId)
+                            );
+
+                        });
+
+
+                    return {
+
+                        ...project,
+
+                        tasks: projectTasks
+
+                    };
+
+                });
+
+
+            console.log(
+                "FINAL PROJECT DATA:",
+                finalProjects
+            );
+
+
+            setProjects(finalProjects);
+
         }
+        catch (error) {
+
+            console.error(
+                "API ERROR:",
+                error
+            );
+
+            setError(
+                "Something went wrong while loading projects and tasks."
+            );
+
+        }
+        finally {
+
+            setLoading(false);
+
+        }
+
     };
 
-    const getPriorityDetails = (priorityId) => {
-        switch (priorityId) {
-            case 3: return { label: "High", color: "text-danger" };
-            case 2: return { label: "Medium", color: "text-warning" };
-            case 1: 
-            default: return { label: "Low", color: "text-success" };
-        }
-    };
 
-    // Find the current selected task object
-    const activeTask = tasks.find(t => t.TaskId === selectedTaskId);
+    // ==================================================
+    // LOADING
+    // ==================================================
 
-    // If a task is selected, show TaskDetails view
-    if (activeTask) {
-        return <TaskDetails task={activeTask} onBack={() => setSelectedTaskId(null)} />;
+    if (loading) {
+
+        return (
+
+            <div className="container-fluid px-0 py-5">
+
+                <div className="text-center py-5">
+
+                    <div
+                        className="spinner-border text-primary mb-3"
+                        role="status"
+                    />
+
+                    <p className="text-muted mb-0">
+
+                        Loading your projects and tasks...
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        );
+
     }
 
-    // Otherwise, show the 3 tasks grid list
+
+    // ==================================================
+    // TASK DETAILS
+    // ==================================================
+
+    if (selectedTask) {
+
+        return (
+
+            <TaskDetails
+                task={selectedTask}
+                projectTitle={selectedProjectTitle}
+                onBack={() => {
+
+                    setSelectedTask(null);
+
+                    setSelectedProjectTitle("");
+
+                }}
+            />
+
+        );
+
+    }
+
+
+    // ==================================================
+    // PAGE
+    // ==================================================
+
     return (
+
         <div className="container-fluid px-0 py-3">
+
+
+            {/* PAGE HEADER */}
+
             <div className="mb-4 pb-3 border-bottom">
-                <h4 className="mb-1 fw-semibold text-dark fs-5 tracking-tight">Assigned Tasks Overview</h4>
-                <p className="text-muted mb-0" style={{ fontSize: "0.875rem" }}>
-                    Manage and track your project tasks, deadlines, and submission status.
+
+                <h4 className="mb-1 fw-semibold text-dark fs-5">
+
+                    My Project Tasks
+
+                </h4>
+
+                <p
+                    className="text-muted mb-0"
+                    style={{
+                        fontSize: "0.875rem"
+                    }}
+                >
+
+                    View the tasks assigned to your projects.
+
                 </p>
+
             </div>
 
-            <div className="row g-4">
-                {tasks.map((task) => {
-                    const priorityInfo = getPriorityDetails(task.PriorityID);
-                    return (
-                        <div className="col-md-6 col-lg-4" key={task.TaskId}>
-                            <div className="card border-0 shadow-sm rounded-0 bg-white h-100">
-                                <div className="card-body p-4 d-flex flex-column justify-content-between">
+
+            {/* ERROR */}
+
+            {error && (
+
+                <div className="alert alert-danger rounded-0">
+
+                    <AlertCircle
+                        size={18}
+                        className="me-2"
+                    />
+
+                    {error}
+
+                </div>
+
+            )}
+
+
+            {/* NO PROJECT */}
+
+            {!error &&
+                projects.length === 0 && (
+
+                    <div className="card border-0 shadow-sm rounded-0">
+
+                        <div className="card-body text-center py-5">
+
+                            <FolderKanban
+                                size={45}
+                                className="text-muted mb-3"
+                            />
+
+                            <h5 className="fw-semibold">
+
+                                No Project Assigned
+
+                            </h5>
+
+                            <p className="text-muted mb-0">
+
+                                No project is currently
+                                assigned to you.
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                )}
+
+
+            {/* PROJECT LIST */}
+
+            {projects.map((project) => {
+
+                const projectId =
+                    project.projectId ??
+                    project.ProjectId;
+
+
+                const projectTitle =
+                    project.projectTitle ??
+                    project.ProjectTitle ??
+                    "Untitled Project";
+
+
+                const projectDescription =
+                    project.description ??
+                    project.Description ??
+                    "";
+
+
+                const projectTasks =
+                    project.tasks || [];
+
+
+                return (
+
+                    <div
+                        key={projectId}
+                        className="mb-5"
+                    >
+
+
+                        {/* PROJECT HEADER */}
+
+                        <div className="card border-0 shadow-sm rounded-0 mb-3">
+
+                            <div className="card-body p-4">
+
+                                <div className="d-flex justify-content-between align-items-center">
+
                                     <div>
-                                        <div className="d-flex justify-content-between align-items-center mb-3">
-                                            <span className="text-muted fw-medium" style={{ fontSize: "0.75rem" }}>
-                                                TASK #{task.TaskId}
-                                            </span>
-                                            {getStatusDetails(task.TaskStatus)}
+
+                                        <div
+                                            className="text-uppercase text-primary fw-medium mb-1"
+                                            style={{
+                                                fontSize: "0.7rem",
+                                                letterSpacing: "0.08em"
+                                            }}
+                                        >
+
+                                            Assigned Project
+
                                         </div>
 
-                                        <h5 className="fw-semibold text-dark mb-2 text-truncate" style={{ fontSize: "1.05rem" }}>
-                                            {task.TaskTitle}
+                                        <h5 className="fw-semibold mb-1">
+
+                                            {projectTitle}
+
                                         </h5>
 
-                                        <p className="text-secondary mb-3 fw-light" style={{ fontSize: "0.875rem", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                                            {task.TaskDescription}
-                                        </p>
+                                        {projectDescription && (
 
-                                        <hr className="text-muted opacity-10 my-3" />
+                                            <p
+                                                className="text-muted mb-0"
+                                                style={{
+                                                    fontSize:
+                                                        "0.85rem"
+                                                }}
+                                            >
 
-                                        <div className="row g-2 mb-3">
-                                            <div className="col-6">
-                                                <div className="d-flex align-items-center gap-2 text-muted" style={{ fontSize: "0.8rem" }}>
-                                                    <Calendar size={14} className="text-danger opacity-75" />
-                                                    <span>{task.DueDate}</span>
-                                                </div>
-                                            </div>
-                                            <div className="col-6 text-end">
-                                                <div className="d-flex align-items-center justify-content-end gap-1" style={{ fontSize: "0.8rem" }}>
-                                                    <Flag size={14} className="opacity-75" />
-                                                    <span className={`fw-medium ${priorityInfo.color}`}>{priorityInfo.label}</span>
-                                                </div>
-                                            </div>
-                                        </div>
+                                                {projectDescription}
 
-                                        <div className="mb-3">
-                                            <div className="d-flex justify-content-between align-items-center mb-1">
-                                                <span className="text-muted d-flex align-items-center gap-1" style={{ fontSize: "0.75rem" }}>
-                                                    <TrendingUp size={12} /> Progress
-                                                </span>
-                                                <span className="fw-semibold text-dark" style={{ fontSize: "0.8rem" }}>
-                                                    {task.ProgressPercentage}%
-                                                </span>
-                                            </div>
-                                            <div className="progress bg-light rounded-0" style={{ height: "4px" }}>
-                                                <div className="progress-bar bg-primary rounded-0" role="progressbar" style={{ width: `${task.ProgressPercentage}%` }}></div>
-                                            </div>
-                                        </div>
+                                            </p>
+
+                                        )}
+
                                     </div>
 
-                                    {/* Working View Details Button */}
-                                    <div className="pt-2 border-top border-light d-flex justify-content-end align-items-center">
-                                        <button 
-                                            className="btn btn-link text-primary text-decoration-none p-0 d-inline-flex align-items-center gap-1 fw-medium" 
-                                            style={{ fontSize: "0.85rem" }}
-                                            onClick={() => setSelectedTaskId(task.TaskId)}
-                                        >
-                                            View Details <ArrowRight size={14} />
-                                        </button>
-                                    </div>
+
+                                    <span className="badge bg-light text-dark rounded-0">
+
+                                        {projectTasks.length}
+                                        {" "}
+                                        {projectTasks.length === 1
+                                            ? "Task"
+                                            : "Tasks"}
+
+                                    </span>
+
                                 </div>
+
                             </div>
+
                         </div>
-                    );
-                })}
-            </div>
+
+
+                        {/* TASKS */}
+
+                        {projectTasks.length === 0 ? (
+
+                            <div className="card border-0 shadow-sm rounded-0">
+
+                                <div className="card-body text-center py-4">
+
+                                    <p className="text-muted mb-0">
+
+                                        No tasks assigned
+                                        for this project.
+
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        ) : (
+
+                            <div className="row g-4">
+
+                                {projectTasks.map((task) => {
+
+                                    const taskId =
+                                        task.taskId ??
+                                        task.TaskId;
+
+
+                                    const taskTitle =
+                                        task.taskTitle ??
+                                        task.TaskTitle ??
+                                        "Untitled Task";
+
+
+                                    const taskDescription =
+                                        task.taskDescription ??
+                                        task.TaskDescription ??
+                                        "";
+
+
+                                    const status =
+                                        task.status ??
+                                        task.Status;
+
+
+                                    const priority =
+                                        task.priority ??
+                                        task.Priority;
+
+
+                                    const progress =
+                                        Number(
+                                            task.progress ??
+                                            task.Progress ??
+                                            0
+                                        );
+
+
+                                    let priorityText =
+                                        "Low";
+
+                                    let priorityColor =
+                                        "text-success";
+
+
+                                    if (
+                                        Number(priority) === 3
+                                    ) {
+
+                                        priorityText =
+                                            "High";
+
+                                        priorityColor =
+                                            "text-danger";
+
+                                    }
+                                    else if (
+                                        Number(priority) === 2
+                                    ) {
+
+                                        priorityText =
+                                            "Medium";
+
+                                        priorityColor =
+                                            "text-warning";
+
+                                    }
+
+
+                                    return (
+
+                                        <div
+                                            className="col-md-6 col-lg-4"
+                                            key={taskId}
+                                        >
+
+                                            <div className="card border-0 shadow-sm rounded-0 h-100">
+
+                                                <div className="card-body p-4 d-flex flex-column">
+
+
+                                                    {/* TOP */}
+
+                                                    <div className="d-flex justify-content-between align-items-center mb-3">
+
+                                                        <span
+                                                            className="text-muted fw-medium"
+                                                            style={{
+                                                                fontSize:
+                                                                    "0.75rem"
+                                                            }}
+                                                        >
+
+                                                            TASK #{taskId}
+
+                                                        </span>
+
+
+                                                        {Number(status) === 3 && (
+
+                                                            <span className="badge bg-success-subtle text-success rounded-0">
+
+                                                                <CheckCircle
+                                                                    size={12}
+                                                                    className="me-1"
+                                                                />
+
+                                                                Completed
+
+                                                            </span>
+
+                                                        )}
+
+
+                                                        {Number(status) === 2 && (
+
+                                                            <span className="badge bg-primary-subtle text-primary rounded-0">
+
+                                                                <Clock
+                                                                    size={12}
+                                                                    className="me-1"
+                                                                />
+
+                                                                In Progress
+
+                                                            </span>
+
+                                                        )}
+
+
+                                                        {Number(status) === 1 && (
+
+                                                            <span className="badge bg-warning-subtle text-warning-emphasis rounded-0">
+
+                                                                <AlertCircle
+                                                                    size={12}
+                                                                    className="me-1"
+                                                                />
+
+                                                                Pending
+
+                                                            </span>
+
+                                                        )}
+
+                                                    </div>
+
+
+                                                    {/* TASK TITLE */}
+
+                                                    <h5
+                                                        className="fw-semibold text-dark mb-2"
+                                                        style={{
+                                                            fontSize:
+                                                                "1.05rem"
+                                                        }}
+                                                    >
+
+                                                        {taskTitle}
+
+                                                    </h5>
+
+
+                                                    {/* DESCRIPTION */}
+
+                                                    <p
+                                                        className="text-secondary mb-3"
+                                                        style={{
+                                                            fontSize:
+                                                                "0.875rem",
+                                                            display:
+                                                                "-webkit-box",
+                                                            WebkitLineClamp: 2,
+                                                            WebkitBoxOrient:
+                                                                "vertical",
+                                                            overflow:
+                                                                "hidden"
+                                                        }}
+                                                    >
+
+                                                        {taskDescription ||
+                                                            "No description available."}
+
+                                                    </p>
+
+
+                                                    <hr className="text-muted opacity-10 my-2" />
+
+
+                                                    {/* DATE */}
+
+                                                    <div className="d-flex justify-content-between align-items-center mb-3">
+
+                                                        <div
+                                                            className="d-flex align-items-center gap-2 text-muted"
+                                                            style={{
+                                                                fontSize:
+                                                                    "0.8rem"
+                                                            }}
+                                                        >
+
+                                                            <Calendar
+                                                                size={14}
+                                                            />
+
+                                                            {task.dueDate ||
+                                                                task.DueDate
+                                                                ? new Date(
+                                                                    task.dueDate ||
+                                                                    task.DueDate
+                                                                ).toLocaleDateString(
+                                                                    "en-IN"
+                                                                )
+                                                                : "No Deadline"}
+
+                                                        </div>
+
+
+                                                        {/* PRIORITY */}
+
+                                                        <div
+                                                            className={`d-flex align-items-center gap-1 ${priorityColor}`}
+                                                            style={{
+                                                                fontSize:
+                                                                    "0.8rem"
+                                                            }}
+                                                        >
+
+                                                            <Flag
+                                                                size={14}
+                                                            />
+
+                                                            {priorityText}
+
+                                                        </div>
+
+                                                    </div>
+
+
+                                                    {/* PROGRESS */}
+
+                                                    <div className="mb-3">
+
+                                                        <div className="d-flex justify-content-between mb-1">
+
+                                                            <span
+                                                                className="text-muted d-flex align-items-center gap-1"
+                                                                style={{
+                                                                    fontSize:
+                                                                        "0.75rem"
+                                                                }}
+                                                            >
+
+                                                                <TrendingUp
+                                                                    size={12}
+                                                                />
+
+                                                                Progress
+
+                                                            </span>
+
+
+                                                            <span
+                                                                className="fw-semibold"
+                                                                style={{
+                                                                    fontSize:
+                                                                        "0.8rem"
+                                                                }}
+                                                            >
+
+                                                                {progress}%
+
+                                                            </span>
+
+                                                        </div>
+
+
+                                                        <div
+                                                            className="progress bg-light rounded-0"
+                                                            style={{
+                                                                height:
+                                                                    "4px"
+                                                            }}
+                                                        >
+
+                                                            <div
+                                                                className="progress-bar bg-primary"
+                                                                style={{
+                                                                    width:
+                                                                        `${progress}%`
+                                                                }}
+                                                            />
+
+                                                        </div>
+
+                                                    </div>
+
+
+                                                    {/* VIEW DETAILS */}
+
+                                                    <div className="mt-auto pt-2 border-top">
+
+                                                        <button
+                                                            className="btn btn-link text-primary text-decoration-none p-0 d-flex align-items-center gap-1"
+                                                            style={{
+                                                                fontSize:
+                                                                    "0.85rem"
+                                                            }}
+                                                            onClick={() => {
+
+                                                                setSelectedTask({
+
+                                                                    taskId:
+                                                                        taskId,
+
+                                                                    taskTitle:
+                                                                        taskTitle,
+
+                                                                    taskDescription:
+                                                                        taskDescription,
+
+                                                                    status:
+                                                                        status,
+
+                                                                    priority:
+                                                                        priority,
+
+                                                                    assignedScore:
+                                                                        task.assignedScore ??
+                                                                        task.AssignedScore,
+
+                                                                    earnedScore:
+                                                                        task.earnedScore ??
+                                                                        task.EarnedScore,
+
+                                                                    progress:
+                                                                        progress,
+
+                                                                    startDate:
+                                                                        task.startDate ??
+                                                                        task.StartDate,
+
+                                                                    dueDate:
+                                                                        task.dueDate ??
+                                                                        task.DueDate,
+
+                                                                    facultyRemarks:
+                                                                        task.facultyRemarks ??
+                                                                        task.FacultyRemarks
+
+                                                                });
+
+
+                                                                setSelectedProjectTitle(
+                                                                    projectTitle
+                                                                );
+
+                                                            }}
+                                                        >
+
+                                                            View Details
+
+                                                            <ArrowRight
+                                                                size={14}
+                                                            />
+
+                                                        </button>
+
+                                                    </div>
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                    );
+
+                                })}
+
+                            </div>
+
+                        )}
+
+                    </div>
+
+                );
+
+            })}
+
         </div>
+
     );
+
 }
 
 export default TaskListDashboard;
+

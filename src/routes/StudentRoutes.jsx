@@ -1,4 +1,4 @@
-import {  Routes, Route } from "react-router-dom";
+import {  Routes, Route,Navigate } from "react-router-dom";
 
 
 
@@ -11,6 +11,10 @@ import Feedback from "../pages/student/Feedback";
 import TaskDetails from "../pages/student/TaskDetails";
 import Profile from "../components/Profile";
 function StudentRoutes() {
+    const role = localStorage.getItem("role");
+      if (role !== "student") {
+        return <Navigate to="/" replace />;
+    }
     return (
       
             <Routes>

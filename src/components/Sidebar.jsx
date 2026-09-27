@@ -38,7 +38,7 @@ function Sidebar() {
     { name: 'Dashboard', path: '/student/dashboard', icon: LayoutDashboard },
     { name: 'My Project', path: '/student/myproject', icon: FolderKanban },
     { name: 'Feedback', path: '/student/feedback', icon: MessageSquare },
-    { name: 'Upload Work', path: '/student/uploadwork', icon: UploadCloud },
+    
     { name: 'Tasks', path: '/student/taskdetails', icon: CheckSquare },
   ];
 
@@ -47,7 +47,8 @@ function Sidebar() {
     { name: 'Dashboard', path: '/faculty/dashboard', icon: LayoutDashboard },
     { name: 'Students', path: '/faculty/facultystudents', icon: GraduationCap },
     { name: 'Project', path: '/faculty/projects', icon: GraduationCap },
-    { name: 'Reviews', path: '/faculty/reviews', icon: ClipboardList },
+    { name: 'Tasks', path: '/faculty/tasks', icon: GraduationCap },
+    // { name: 'Reviews', path: '/faculty/reviews', icon: ClipboardList },
   ];
 
   let menu = [];
@@ -58,9 +59,9 @@ function Sidebar() {
   } else if (role === 'student') {
     menu = studentMenu;
     roleLabel = 'Student';
-  } else if (role === 'staff') {
+  } else if (role === 'faculty') {
     menu = facultyMenu;
-    roleLabel = 'staff';
+    roleLabel = 'faculty';
   }
 
   return (
